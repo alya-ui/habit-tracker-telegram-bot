@@ -1,9 +1,11 @@
-
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message
+
+from bot.database.db import add_habit, get_habits
+
 router = Router()
 class dobav_privychku(StatesGroup):
     zhdyom_nazvanie = State()
@@ -72,6 +74,13 @@ async def poluchit_vremya(message: Message, state: FSMContext):
         return
     await state.update_data(vremya=vremya)
     dannye = await state.get_data()
+
+    await add_habit(
+        user_id=message.from_user.id,
+        name=dannye["privychka"],
+        target_days=dannye["dni"],
+        reminder_time=dannye["vremya"]
+    )
     await message.answer(
         "Готово! 🥳 Привычка добавлена!\n\n"
         f"👀 Название: {dannye['privychka']}\n"
@@ -80,3 +89,26 @@ async def poluchit_vremya(message: Message, state: FSMContext):
         "Если хочешь добавить ещё одну привычку, то просто введи /add_habit"
     )
     await state.clear()
+
+@router.message(Command("my_habits"))
+async def my_habits(message: Message):
+    habits = await get_habits(message.from_user.id)
+
+    if not habits:
+        await message.answer("У тебя пока нет привычек 😢")
+        return
+
+    text = "📋 Твои привычки:\n\n"
+
+    for habit in habits:
+        habit_id, name, target_days, reminder_time = habit
+
+        text += (
+            f"🆔 ID: {habit_id}\n"
+            f"🍀 Название: {name}\n"
+            f"📆 Цель: {target_days} дней\n"
+            f"⏰ Время: {reminder_time}\n"
+            f"-------------------\n"
+        )
+
+    await message.answer(text)

@@ -2,6 +2,7 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from bot.config import BOT_TOKEN
 from bot.handlers import start, habits
+from bot.database.db import init_db
 
 
 async def main():
