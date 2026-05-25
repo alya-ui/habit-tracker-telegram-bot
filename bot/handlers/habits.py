@@ -1,11 +1,10 @@
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
 
-from bot.database.db import add_habit, get_habits
-
+from bot.database.db import add_habit, get_habits, mark_done, get_streak, get_target_days, get_days_since_creation 
 
 router = Router()
 class dobav_privychku(StatesGroup):
