@@ -153,3 +153,28 @@ async def complete_callback(callback: CallbackQuery):
             await callback.message.answer(f"🏆 ПОЗДРАВЛЯЮ! Ты выполнил цель в {target_days} дней! Ты молодец!")
 
     await callback.answer()
+
+@router.message(Command("stats"))
+async def stats(message: Message):
+    user_id = message.from_user.id
+    habits = await get_habits(user_id)
+    if not habits:
+        await message.answer("У тебя пока нет привычек. Добавь через /add_habit")
+        return
+    
+    text = "📊 *Твоя статистика:*\n\n"
+    
+    for habit_id, name, target_days, reminder_time in habits:
+        # Получаем статистику для каждой привычки
+        stats_data = await get_stats(habit_id)
+        
+        text += (
+            f"🍀 *{name}*\n"
+            f"📆 Выполнено: {stats_data['done']} из {target_days} дней\n"
+            f"📊 Прогресс: {stats_data['percent']}%\n"
+            f"🔥 Текущая серия: {stats_data['streak']} дн.\n"
+            f"🏆 Рекордная серия: {stats_data['best_streak']} дн.\n"
+            f"-------------------\n"
+        )
+    
+    await message.answer(text, parse_mode="Markdown")
