@@ -1,3 +1,4 @@
+from bot.database.db import add_habit, get_habits, mark_done, is_done_today, get_streak, get_stats, get_days_since_creation, get_target_days, get_best_streak
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -5,8 +6,6 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
 from aiogram.filters import Command
-
-from bot.database.db import add_habit, get_habits, mark_done, get_streak, get_target_days, get_days_since_creation 
 
 router = Router()
 
@@ -171,8 +170,8 @@ async def stats(message: Message):
     text = "📊 *Твоя статистика:*\n\n"
     
     for habit_id, name, target_days, reminder_time in habits:
-        # Получаем статистику для каждой привычки
         stats_data = await get_stats(habit_id)
+        best_streak = await get_best_streak(habit_id)
         
         text += (
             f"🍀 *{name}*\n"
@@ -184,5 +183,28 @@ async def stats(message: Message):
         )
     
     await message.answer(text, parse_mode="Markdown")
+
+@router.message(Command("complete"))
+async def complete_choice(message: Message):
+    habits = await get_habits(message.from_user.id)
+    if not habits:
+        await message.answer("У тебя пока нет привычек. Добавь /add_habit")
+        return
+    keyboard = []
+    for hid, name, _, _ in habits:
+        keyboard.append([InlineKeyboardButton(text=name, callback_data=f"complete_{hid}")])
+    markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    await message.answer("Какую привычку ты выполнил(а) сегодня?", reply_markup=markup)
+
+@router.message(Command("help"))
+async def help_command(message: Message):
+    await message.answer(
+        "Доступные команды:\n"
+        "/add_habit - добавить привычку\n"
+        "/my_habits - список привычек\n"
+        "/complete - отметить выполнение\n"
+        "/stats - статистика\n"
+        "/help - справка"
+    )
 
 

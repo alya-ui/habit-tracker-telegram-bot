@@ -18,6 +18,12 @@ async def init_db():
             done INTEGER
         )''')
         await db.commit()
+    await add_created_at_column()
+async def get_target_days(habit_id: int) -> int:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute("SELECT target_days FROM habits WHERE id = ?", (habit_id,))
+        row = await cur.fetchone()
+        return row[0] if row else 0
 
 async def add_habit(user_id: int, name: str, target_days: int, reminder_time: str):
     async with aiosqlite.connect(DB_PATH) as db:
@@ -84,3 +90,47 @@ async def get_stats(habit_id: int):
     percent = (done_count / total * 100) if total else 0
     streak = await get_streak(habit_id)
     return {"done": done_count, "total": total, "percent": round(percent, 1), "streak": streak}
+async def get_days_since_creation(habit_id: int) -> int:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute("SELECT created_at FROM habits WHERE id = ?", (habit_id,))
+        row = await cur.fetchone()
+        if not row:
+            return 0
+        created = datetime.datetime.fromisoformat(row[0]).date()
+        today = datetime.date.today()
+        return (today - created).days
+async def add_created_at_column():
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute("PRAGMA table_info(habits)")
+        columns = await cursor.fetchall()
+        column_names = [col[1] for col in columns]
+        if 'created_at' not in column_names:
+            await db.execute("ALTER TABLE habits ADD COLUMN created_at TIMESTAMP")
+            await db.execute("UPDATE habits SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL")
+            await db.commit()
+            print("✅ Колонка created_at добавлена и заполнена")
+async def get_best_streak(habit_id: int) -> int:
+    """Возвращает рекордную серию для привычки"""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute(
+            "SELECT date FROM logs WHERE habit_id=? AND done=1 ORDER BY date ASC",
+            (habit_id,)
+        )
+        rows = await cur.fetchall()
+    if not rows:
+        return 0
+    best = 0
+    current = 1
+    prev = datetime.date.fromisoformat(rows[0][0])
+    for row in rows[1:]:
+        d = datetime.date.fromisoformat(row[0])
+        if d == prev + datetime.timedelta(days=1):
+            current += 1
+        else:
+            if current > best:
+                best = current
+            current = 1
+        prev = d
+    if current > best:
+        best = current
+    return best
