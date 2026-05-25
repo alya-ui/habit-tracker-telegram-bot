@@ -69,6 +69,7 @@ async def get_streak(habit_id: int):
             break
     return streak
 
+
 async def get_stats(habit_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute("SELECT date FROM logs WHERE habit_id=? ORDER BY date ASC LIMIT 1", (habit_id,))

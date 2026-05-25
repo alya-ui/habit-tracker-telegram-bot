@@ -5,6 +5,7 @@ from bot.handlers import start, habits
 
 
 async def main():
+    await init_db()
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
     dp.include_router(start.router)
