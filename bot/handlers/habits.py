@@ -2,6 +2,13 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.filters import Command
+
+from bot.database.db import add_habit, get_habits,  mark_done, get_streak, get_target_days, get_days_since_creation
+
+
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from bot.keyboards.inline import main_menu, menu_text
 from bot.database.db import (
@@ -14,6 +21,7 @@ from bot.database.db import (
     get_target_days,
     get_best_streak,
 )
+
 router = Router()
 class dobav_privychku(StatesGroup):
     zhdyom_nazvanie = State()
@@ -130,6 +138,52 @@ async def stats_button(call: CallbackQuery):
             "Сначала добавь привычку через кнопку «Добавить привычку».",
             reply_markup=back_to_menu
         )
+
+
+    await message.answer(text)
+
+@router.callback_query(F.data.startswith("complete_"))
+async def complete_callback(callback: CallbackQuery):
+    habit_id = int(callback.data.split("_")[1])
+    user_id = callback.from_user.id
+
+    habits = await get_habits(user_id)
+    if habit_id not in [h[0] for h in habits]:
+        await callback.answer("Это не твоя привычка!", show_alert=True)
+        return
+
+    await mark_done(habit_id)
+    streak = await get_streak(habit_id)
+
+    await callback.message.edit_text(f"Отлично! Привычка отмечена. Текущая серия: {streak} дн.")
+
+    target_days = await get_target_days(habit_id)
+    
+    if streak <= target_days:
+        if streak == 1:
+            await callback.message.answer("🌱 Первый день! Отличный старт!")
+        elif streak == 3:
+            await callback.message.answer("🔥 3 дня! Ты растёшь!")
+        elif streak == 5:
+            await callback.message.answer("⭐ 5 дней! Горжусь тобой, боец!")
+        elif streak == 7:
+            await callback.message.answer("🌟 Целая неделя! Ты крут!")
+        elif streak == 10:
+            await callback.message.answer("🎉 10 дней! Дисциплина — это ты!")
+        elif streak == 14:
+            await callback.message.answer("💎 14 дней! Золотой уровень дисциплины!")
+        elif streak == 21:
+            await callback.message.answer("💪 21 день! Привычка закрепляется!")
+        elif streak == 30:
+            await callback.message.answer("🏆 МЕСЯЦ! Ты невероятен!")
+        elif streak > 30 and streak % 5 == 0:
+            await callback.message.answer(f"🎯 Мечты сбудутся, а ты с нами уже {streak} дней! Так держать!")
+        
+        if streak == target_days:
+            await callback.message.answer(f"🏆 ПОЗДРАВЛЯЮ! Ты выполнил цель в {target_days} дней! Ты молодец!")
+
+    await callback.answer()
+
         await call.answer()
         return
     text = "📊 Твоя статистика\n\n"
@@ -156,3 +210,4 @@ async def to_menu_button(call: CallbackQuery):
         reply_markup=main_menu
     )
     await call.answer()
+>>>>>>> origin/main
