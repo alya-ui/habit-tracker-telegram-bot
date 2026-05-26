@@ -36,7 +36,15 @@ async def add_habit_command(message: Message, state: FSMContext):
         "Напиши название привычки"
     )
     await state.set_state(dobav_privychku.zhdyom_nazvanie)
+@router.callback_query(F.data == "add_habit")
+async def add_habit_button(call: CallbackQuery, state: FSMContext):
+    await call.message.answer(
+        "Давай добавим новую привычку! 🍀\n\n"
+        "Напиши название привычки"
+    )
 
+    await state.set_state(dobav_privychku.zhdyom_nazvanie)
+    await call.answer()
 
 @router.message(dobav_privychku.zhdyom_nazvanie)
 
@@ -101,7 +109,8 @@ async def poluchit_vremya(message: Message, state: FSMContext):
         f"👀 Название: {dannye['privychka']}\n"
         f"📆 Количество дней: {dannye['dni']}\n"
         f"🕘 Время напоминаний: {dannye['vremya']}\n"
-        "Если хочешь добавить ещё одну привычку, то просто введи /add_habit"
+        "Если хочешь добавить ещё одну привычку, то просто введи /add_habit",
+        reply_markup=back_to_menu
     )
     await state.clear()
 back_to_menu = InlineKeyboardMarkup(
@@ -132,15 +141,37 @@ async def help_button(call: CallbackQuery):
 @router.callback_query(F.data == "stats")
 async def stats_button(call: CallbackQuery):
     habits = await get_habits(call.from_user.id)
+
     if not habits:
         await call.message.edit_text(
             "У тебя пока нет привычек 🌱\n\n"
             "Сначала добавь привычку через кнопку «Добавить привычку».",
             reply_markup=back_to_menu
         )
+        await call.answer()
+        return
 
+    text = "📊 Твоя статистика\n\n"
 
-    await message.answer(text)
+    for habit_id, name, target_days, reminder_time in habits:
+        stats_data = await get_stats(habit_id)
+        best = await get_best_streak(habit_id)
+
+        text += (
+            f"🌱 {name}\n"
+            f"✅ Выполнено: {stats_data['done']} из {target_days} дней\n"
+            f"📈 Прогресс: {stats_data['percent']}%\n"
+            f"🔥 Текущая серия: {stats_data['streak']} дн.\n"
+            f"🏆 Рекордная серия: {best} дн.\n"
+            f"⏰ Напоминание: {reminder_time}\n\n"
+        )
+
+    await call.message.edit_text(
+        text,
+        reply_markup=back_to_menu
+    )
+
+    await call.answer()
 
 @router.callback_query(F.data.startswith("complete_"))
 async def complete_callback(callback: CallbackQuery):
@@ -161,48 +192,41 @@ async def complete_callback(callback: CallbackQuery):
     
     if streak <= target_days:
         if streak == 1:
-            await callback.message.answer("🌱 Первый день! Отличный старт!")
+            await callback.message.answer("🌱 Первый день! Отличный старт!",
+            reply_markup=back_to_menu)
         elif streak == 3:
-            await callback.message.answer("🔥 3 дня! Ты растёшь!")
+            await callback.message.answer("🔥 3 дня! Ты растёшь!",
+            reply_markup=back_to_menu)
         elif streak == 5:
-            await callback.message.answer("⭐ 5 дней! Горжусь тобой, боец!")
+            await callback.message.answer("⭐ 5 дней! Горжусь тобой, боец!",
+            reply_markup=back_to_menu)
         elif streak == 7:
-            await callback.message.answer("🌟 Целая неделя! Ты крут!")
+            await callback.message.answer("🌟 Целая неделя! Ты крут!",
+            reply_markup=back_to_menu)
         elif streak == 10:
-            await callback.message.answer("🎉 10 дней! Дисциплина — это ты!")
+            await callback.message.answer("🎉 10 дней! Дисциплина — это ты!",
+            reply_markup=back_to_menu)
         elif streak == 14:
-            await callback.message.answer("💎 14 дней! Золотой уровень дисциплины!")
+            await callback.message.answer("💎 14 дней! Золотой уровень дисциплины!",
+            reply_markup=back_to_menu)
         elif streak == 21:
-            await callback.message.answer("💪 21 день! Привычка закрепляется!")
+            await callback.message.answer("💪 21 день! Привычка закрепляется!",
+            reply_markup=back_to_menu)
         elif streak == 30:
-            await callback.message.answer("🏆 МЕСЯЦ! Ты невероятен!")
+            await callback.message.answer("🏆 МЕСЯЦ! Ты невероятен!",
+            reply_markup=back_to_menu)
         elif streak > 30 and streak % 5 == 0:
-            await callback.message.answer(f"🎯 Мечты сбудутся, а ты с нами уже {streak} дней! Так держать!")
+            await callback.message.answer(f"🎯 Мечты сбудутся, а ты с нами уже {streak} дней! Так держать!",
+            reply_markup=back_to_menu)
         
         if streak == target_days:
-            await callback.message.answer(f"🏆 ПОЗДРАВЛЯЮ! Ты выполнил цель в {target_days} дней! Ты молодец!")
+            await callback.message.answer(f"🏆 ПОЗДРАВЛЯЮ! Ты выполнил цель в {target_days} дней! Ты молодец!",
+            reply_markup=back_to_menu)
 
     await callback.answer()
 
-        await call.answer()
-        return
-    text = "📊 Твоя статистика\n\n"
-    for habit_id, name, target_days, reminder_time in habits:
-        stats_data = await get_stats(habit_id)
-        best = await get_best_streak(habit_id)
-        text += (
-            f"🌱 {name}\n"
-            f"✅ Выполнено: {stats_data['done']} из {target_days} дней\n"
-            f"📈 Прогресс: {stats_data['percent']}%\n"
-            f"🔥 Текущая серия: {stats_data['streak']} дн.\n"
-            f"🏆 Рекордная серия: {best} дн.\n"
-            f"⏰ Напоминание: {reminder_time}\n\n"
-        )
-    await call.message.edit_text(
-        text,
-        reply_markup=back_to_menu
-    )
-    await call.answer()
+
+
 @router.callback_query(F.data == "to_menu")
 async def to_menu_button(call: CallbackQuery):
     await call.message.edit_text(
@@ -210,4 +234,66 @@ async def to_menu_button(call: CallbackQuery):
         reply_markup=main_menu
     )
     await call.answer()
->>>>>>> origin/main
+
+@router.callback_query(F.data == "my_habits")
+async def my_habits_button(call: CallbackQuery):
+    habits = await get_habits(call.from_user.id)
+
+    if not habits:
+        await call.message.answer(
+            "У тебя пока нет привычек 🌱\n\n"
+            "Нажми «Добавить привычку», чтобы создать первую."
+        )
+        await call.answer()
+        return
+
+    await call.message.answer("📋 Твои привычки:")
+
+    for habit_id, name, target_days, reminder_time in habits:
+        habit_menu = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✅ Выполнено",
+                        callback_data=f"complete_{habit_id}"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="📊 Статистика",
+                        callback_data=f"habit_stats_{habit_id}"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 В меню",
+                        callback_data="to_menu"
+                    )
+                ]
+            ]
+        )
+
+        await call.message.answer(
+            f"🌱 {name}\n"
+            f"📅 Цель: {target_days} дней\n"
+            f"⏰ Напоминание: {reminder_time}",
+            reply_markup=habit_menu
+        )
+
+    await call.answer()
+@router.callback_query(F.data.startswith("habit_stats_"))
+async def habit_stats_button(call: CallbackQuery):
+    habit_id = int(call.data.split("_")[-1])
+
+    stats_data = await get_stats(habit_id)
+    best = await get_best_streak(habit_id)
+
+    await call.message.answer(
+        "📊 Статистика привычки\n\n"
+        f"✅ Выполнено: {stats_data['done']}\n"
+        f"📈 Прогресс: {stats_data['percent']}%\n"
+        f"🔥 Текущая серия: {stats_data['streak']} дн.\n"
+        f"🏆 Рекордная серия: {best} дн."
+    )
+
+    await call.answer()
