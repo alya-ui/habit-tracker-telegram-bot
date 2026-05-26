@@ -114,7 +114,7 @@ async def add_created_at_column():
             await db.commit()
             print("✅ Колонка created_at добавлена и заполнена")
 async def get_best_streak(habit_id: int) -> int:
-    """Возвращает рекордную серию для привычки"""
+
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute(
             "SELECT date FROM logs WHERE habit_id=? AND done=1 ORDER BY date ASC",

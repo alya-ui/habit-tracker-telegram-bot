@@ -88,34 +88,85 @@ async def poluchit_vremya(message: Message, state: FSMContext):
         reminder_time=data["vremya"]
     )
 
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
     await message.answer(
         "Готово! 🥳 Привычка добавлена!\n\n"
-        f"👀 Название: {data['privychka']}\n"
-        f"📆 Количество дней: {data['dni']}\n"
-        f"🕘 Время: {data['vremya']}\n"
+        f"🍀 Название: {data['privychka']}\n"
+        f"📆 Дней: {data['dni']}\n"
+        f"🕘 Время: {data['vremya']}\n",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="🏠 Выйти в меню", callback_data="to_menu")]
+            ]
+        )
     )
 
-    await state.clear()
 
-@router.message(Command("my_habits"))
-async def my_habits(message: Message):
-    habits = await get_habits(message.from_user.id)
+async def habits_menu(call: CallbackQuery):
+    habits = await get_habits(call.from_user.id)
 
     if not habits:
-        await message.answer("У тебя пока нет привычек 😢")
+        await call.message.answer("У тебя пока нет привычек 😢")
         return
 
-    text = "📋 Твои привычки:\n\n"
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            *[
+                [InlineKeyboardButton(text=f"🍀 {name}", callback_data=f"habit_{hid}")]
+                for hid, name, _, _ in habits
+            ],
+            [InlineKeyboardButton(text="🏠 В меню", callback_data="to_menu")]
+        ]
+    )
 
-    for habit_id, name, target_days, reminder_time in habits:
-        text += (
-            f"🍀 {name}\n"
-            f"📆 {target_days} дней\n"
-            f"⏰ {reminder_time}\n"
-            f"-------------------\n"
-        )
+    await call.message.answer("📋 Твои привычки:", reply_markup=kb)
 
-    await message.answer(text)
+
+@router.callback_query(F.data == "my_habits")
+async def my_habits(call: CallbackQuery):
+    await habits_menu(call)
+    await call.answer()
+
+@router.callback_query(F.data == "back_to_list")
+async def back(call: CallbackQuery):
+    await habits_menu(call)
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("habit_"))
+async def habit_card(call: CallbackQuery):
+    habit_id = int(call.data.split("_")[1])
+
+    habits = await get_habits(call.from_user.id)
+
+    habit = next((h for h in habits if h[0] == habit_id), None)
+
+    if not habit:
+        await call.answer("Привычка не найдена 😢", show_alert=True)
+        return
+
+    _, name, target_days, reminder_time = habit
+
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✔ Выполнено", callback_data=f"complete_{habit_id}")],
+        [InlineKeyboardButton(text="✏ Изменить название", callback_data=f"edit_name_{habit_id}")],
+        [InlineKeyboardButton(text="⏰ Изменить время", callback_data=f"edit_time_{habit_id}")],
+        [InlineKeyboardButton(text="🗑 Удалить", callback_data=f"delete_{habit_id}")],
+        [InlineKeyboardButton(text="🏠 В меню", callback_data="to_menu")]
+    ])
+
+    await call.message.answer(
+        f"🍀 *Привычка:* {name}\n"
+        f"🕘 *Напоминание:* {reminder_time}\n"
+        f"📆 Цель: {target_days} дней\n\n"
+        "Выбери действие:",
+        reply_markup=kb,
+        parse_mode="Markdown"
+    )
+
+    await call.answer()
+
 
 @router.callback_query(F.data.startswith("complete_"))
 async def complete_callback(callback: CallbackQuery):
@@ -158,6 +209,18 @@ async def complete_callback(callback: CallbackQuery):
             await callback.message.answer(f"🏆 ПОЗДРАВЛЯЮ! Ты выполнил цель в {target_days} дней! Ты молодец!")
 
     await callback.answer()
+
+
+from bot.handlers.start import main_menu
+
+@router.callback_query(F.data == "to_menu")
+async def to_menu(call: CallbackQuery):
+    await call.message.edit_text(
+        "📍 Главное меню\nВыберите действие 👇",
+        reply_markup=main_menu
+    )
+    await call.answer()
+
 
 @router.message(Command("stats"))
 async def stats(message: Message):
