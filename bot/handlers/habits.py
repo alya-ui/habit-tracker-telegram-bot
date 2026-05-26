@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
-from aiogram.filters import Command
+from aiogram.filters import CommandStart, Command
 
 router = Router()
 
@@ -172,13 +172,13 @@ async def stats(message: Message):
     for habit_id, name, target_days, reminder_time in habits:
         stats_data = await get_stats(habit_id)
         best_streak = await get_best_streak(habit_id)
-        
+        best = await get_best_streak(habit_id)
         text += (
             f"🍀 *{name}*\n"
             f"📆 Выполнено: {stats_data['done']} из {target_days} дней\n"
             f"📊 Прогресс: {stats_data['percent']}%\n"
             f"🔥 Текущая серия: {stats_data['streak']} дн.\n"
-            f"🏆 Рекордная серия: {stats_data['best_streak']} дн.\n"
+            f"🏆 Рекордная серия: {best} дн.\n"
             f"-------------------\n"
         )
     

@@ -2,22 +2,17 @@ from aiogram import Router, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.fsm.context import FSMContext
 
 router = Router()
 
 start_menu = InlineKeyboardMarkup(inline_keyboard=[
-    [
-        InlineKeyboardButton(text="🚀 Начать", callback_data="start_app")
-    ]
+    [InlineKeyboardButton(text="🚀 Начать", callback_data="start_app")]
 ])
 
 main_menu = InlineKeyboardMarkup(inline_keyboard=[
-    [
-        InlineKeyboardButton(text="🍀 Добавить привычку", callback_data="add_habit")
-    ],
-    [
-        InlineKeyboardButton(text="📋 Мои привычки", callback_data="my_habits")
-    ]
+    [InlineKeyboardButton(text="🍀 Добавить привычку", callback_data="add_habit")],
+    [InlineKeyboardButton(text="📋 Мои привычки", callback_data="my_habits")]
 ])
 
 @router.message(CommandStart())
@@ -37,4 +32,16 @@ async def start_app(call: CallbackQuery):
         "Добро пожаловать в главное меню 👇",
         reply_markup=main_menu
     )
+    await call.answer()
+
+@router.callback_query(F.data == "add_habit")
+async def add_habit_callback(call: CallbackQuery, state: FSMContext):
+    from bot.handlers.habits import start_add_habit
+    await start_add_habit(call, state)
+    await call.answer()
+
+@router.callback_query(F.data == "my_habits")
+async def my_habits_callback(call: CallbackQuery):
+    from bot.handlers.habits import my_habits
+    await my_habits(call.message)
     await call.answer()

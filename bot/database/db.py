@@ -26,6 +26,7 @@ async def get_target_days(habit_id: int) -> int:
         return row[0] if row else 0
 
 async def add_habit(user_id: int, name: str, target_days: int, reminder_time: str):
+    user_id = int(user_id)
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute(
             "INSERT INTO habits (user_id, name, target_days, reminder_time) VALUES (?, ?, ?, ?)",
@@ -35,12 +36,15 @@ async def add_habit(user_id: int, name: str, target_days: int, reminder_time: st
         return cur.lastrowid
 
 async def get_habits(user_id: int):
+    user_id = int(user_id)
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute(
             "SELECT id, name, target_days, reminder_time FROM habits WHERE user_id = ?",
             (user_id,)
         )
-        return await cur.fetchall()
+        rows = await cur.fetchall()
+        print(f"DEBUG: get_habits для user_id {user_id} нашла {len(rows)} привычек")
+        return rows
 
 async def mark_done(habit_id: int, date: str = None):
     if date is None:
