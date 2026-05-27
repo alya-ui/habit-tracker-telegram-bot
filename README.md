@@ -72,3 +72,27 @@ bot/
 README.md
 requirements.txt
 ```
+
+## Как запустить проект
+
+### Windows
+```bash
+git clone https://github.com/alya-ui/habit-tracker-telegram-bot.git
+cd habit-tracker-telegram-bot
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.save .env
+# (Откройте .env и вставьте токен: BOT_TOKEN=ваш_токен_бота)
+python -m bot.main
+
+### Linux/macOS
+
+git clone https://github.com/alya-ui/habit-tracker-telegram-bot.git
+cd habit-tracker-telegram-bot
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.save .env
+# (Откройте .env и вставьте токен: BOT_TOKEN=ваш_токен_бота)
+python -m bot.main
