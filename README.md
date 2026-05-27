@@ -33,38 +33,40 @@
 - ...выводить мотивационные сообщения за серии выполнений.
 
 ## Структура репозитория
-├── .idea/ # настройки IDE (PyCharm)
-│ ├── inspectionProfiles/
-│ │ ├── profile_settings.xml
-│ ├── .gitignore
-│ ├── misc.xml
-│ ├── modules.xml
-│ ├── tg bot.iml
-│ └── vcs.xml
-├── bot/
-│ ├── database/
-│ │ ├── init.py
-│ │ └── db.py 
-│ ├── handlers/
-│ │ ├── init.py
-│ │ ├── habits.py 
-│ │ └── start.py
-│ ├── keyboards/
-│ │ ├── init.py
-│ │ └── inline.py 
-│ ├── services/
-│ │ ├── init.py
-│ │ ├── missed_checker.py 
-│ │ └── remis.py
-│ ├── texts/
-│ │ ├── init.py
-│ │ ├── messages.py 
-│ │ └── missed_messages.py 
-│ ├── init.py
-│ ├── config.py 
-│ ├── habits.db 
-│ └── main.py 
-├── .env.save 
+.idea/
+├── inspectionProfiles/
+│ └── profile_settings.xml
 ├── .gitignore
-├── README.md
-└── requirements.txt 
+├── misc.xml
+├── modules.xml
+├── tg bot.iml
+└── vcs.xml
+
+bot/
+├── database/
+│ ├── init.py
+│ └── db.py
+├── handlers/
+│ ├── init.py
+│ ├── habits.py
+│ └── start.py
+├── keyboards/
+│ ├── init.py
+│ └── inline.py
+├── services/
+│ ├── init.py
+│ ├── missed_checker.py
+│ └── remis.py
+├── texts/
+│ ├── init.py
+│ ├── messages.py
+│ └── missed_messages.py
+├── init.py
+├── config.py
+├── habits.db
+└── main.py
+
+.env.save
+.gitignore
+README.md
+requirements.txt
