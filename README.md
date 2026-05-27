@@ -88,6 +88,7 @@ python -m bot.main
 
 ### Linux/ macOS
 ```bash
+
 git clone https://github.com/alya-ui/habit-tracker-telegram-bot.git
 cd habit-tracker-telegram-bot
 python3 -m venv .venv
