@@ -514,7 +514,7 @@ async def delete_confirm(call: CallbackQuery):
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(
-                text="✅ Удалить",
+                text="❌ Удалить",
                 callback_data=f"delete_yes_{habit_id}"
             ),
             InlineKeyboardButton(
