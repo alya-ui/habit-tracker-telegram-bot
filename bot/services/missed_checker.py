@@ -30,7 +30,7 @@ async def check_missed_days(bot: Bot):
                             f"Ты не отмечал *{habit['habit_name']}* уже *{days_missed}* "
                             f"{'день' if days_missed == 1 else 'дней'}.\n\n"
                             f"{message_text}\n\n"
-                            f"✅ /my_habits - посмотреть привычки\n"
+                            f"🍀 /my_habits - посмотреть привычки\n"
                             f"➕ /add_habit - добавить новую"
                         )
                         
