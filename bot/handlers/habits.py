@@ -268,7 +268,7 @@ async def my_habits_button(call: CallbackQuery):
 
         done_today = await is_done_today(habit_id)
 
-        status = "✅" if done_today else "❌"
+        status = "✅" if done_today else "⌛️"
 
         keyboard.append([
             InlineKeyboardButton(
