@@ -3,6 +3,19 @@ import datetime
 import aiosqlite
 from aiogram import Bot
 from bot.database import db
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+def done_keyboard(habit_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Выполнено",
+                    callback_data=f"complete_{habit_id}"
+                )
+            ]
+        ]
+    )
 
 async def reminder_worker(bot: Bot):
     while True:
@@ -12,7 +25,11 @@ async def reminder_worker(bot: Bot):
             rows = await cur.fetchall()
         for hid, uid, name in rows:
             if not await db.is_done_today(hid):
-                await bot.send_message(uid, f"⏰ Напоминание: {name}! /complete")
+     await bot.send_message(
+    uid,
+    f"⏰ Напоминание: {name}\nОтметь выполнение:",
+    reply_markup=done_keyboard(hid)
+)
         await asyncio.sleep(60)
 
 async def missed_check_worker():
