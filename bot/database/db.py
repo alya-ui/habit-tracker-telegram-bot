@@ -183,7 +183,54 @@ async def get_days_since_creation(habit_id: int) -> int:
             created = date.fromisoformat(created_str)
             return (date.today() - created).days
         return 0
+      
+async def get_habit_by_id(habit_id: int, user_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT id, name, target_days, reminder_time FROM habits WHERE id = ? AND user_id = ? AND is_active = 1",
+            (habit_id, user_id)
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
 
+
+async def update_habit_name(habit_id: int, new_name: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE habits SET name = ? WHERE id = ?",
+            (new_name, habit_id)
+        )
+        await db.commit()
+
+
+async def update_habit_days(habit_id: int, new_days: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE habits SET target_days = ? WHERE id = ?",
+            (new_days, habit_id)
+        )
+        await db.commit()
+
+
+async def update_habit_time(habit_id: int, new_time: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE habits SET reminder_time = ? WHERE id = ?",
+            (new_time, habit_id)
+        )
+        await db.commit()
+
+
+async def delete_habit(habit_id: int, user_id: int) -> bool:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "UPDATE habits SET is_active = 0 WHERE id = ? AND user_id = ?",
+            (habit_id, user_id)
+        )
+        await db.commit()
+        return cursor.rowcount > 0
+      
 async def get_days_since_creation(habit_id: int) -> int:
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute("SELECT created_at FROM habits WHERE id = ?", (habit_id,))
