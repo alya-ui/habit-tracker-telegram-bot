@@ -24,12 +24,6 @@ async def init_db():
         )''')
         await db.commit()
     await add_created_at_column()
-async def get_target_days(habit_id: int) -> int:
-    async with aiosqlite.connect(DB_PATH) as db:
-        cur = await db.execute("SELECT target_days FROM habits WHERE id = ?", (habit_id,))
-        row = await cur.fetchone()
-        return row[0] if row else 0
-
 
 async def add_habit(user_id: int, name: str, target_days: int, reminder_time: str):
     user_id = int(user_id)
@@ -45,7 +39,7 @@ async def get_habits(user_id: int):
     user_id = int(user_id)
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute(
-            "SELECT id, name, target_days, reminder_time FROM habits WHERE user_id = ?",
+            "SELECT id, name, target_days, reminder_time FROM habits WHERE user_id = ? AND is_active = 1",
             (user_id,)
         )
         rows = await cur.fetchall()
@@ -55,9 +49,23 @@ async def get_habits(user_id: int):
 async def mark_done(habit_id: int, date: str = None):
     if date is None:
         date = datetime.date.today().isoformat()
+
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("DELETE FROM logs WHERE habit_id=? AND date=?", (habit_id, date))
-        await db.execute("INSERT INTO logs (habit_id, date, done) VALUES (?, ?, 1)", (habit_id, date))
+        await db.execute(
+            "DELETE FROM logs WHERE habit_id=? AND date=?",
+            (habit_id, date)
+        )
+
+        await db.execute(
+            "INSERT INTO logs (habit_id, date, done) VALUES (?, ?, 1)",
+            (habit_id, date)
+        )
+
+        await db.execute(
+            "UPDATE habits SET completed_at = ? WHERE id = ?",
+            (date, habit_id)
+        )
+
         await db.commit()
 
 async def is_done_today(habit_id: int):
@@ -171,18 +179,6 @@ async def get_target_days(habit_id: int) -> int:
         cursor = await db.execute('SELECT target_days FROM habits WHERE id = ?', (habit_id,))
         result = await cursor.fetchone()
         return result[0] if result else 0
-
-
-async def get_days_since_creation(habit_id: int) -> int:
-    from datetime import date
-    async with aiosqlite.connect(DB_PATH) as db:
-        cursor = await db.execute('SELECT created_at FROM habits WHERE id = ?', (habit_id,))
-        result = await cursor.fetchone()
-        if result and result[0]:
-            created_str = result[0].split(' ')[0]
-            created = date.fromisoformat(created_str)
-            return (date.today() - created).days
-        return 0
       
 async def get_habit_by_id(habit_id: int, user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
@@ -194,30 +190,29 @@ async def get_habit_by_id(habit_id: int, user_id: int):
         row = await cursor.fetchone()
         return dict(row) if row else None
 
-
-async def update_habit_name(habit_id: int, new_name: str):
+async def update_habit_name(habit_id: int, user_id: int, new_name: str):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
-            "UPDATE habits SET name = ? WHERE id = ?",
-            (new_name, habit_id)
+            "UPDATE habits SET name = ? WHERE id = ? AND user_id = ?",
+            (new_name, habit_id, user_id)
         )
         await db.commit()
 
 
-async def update_habit_days(habit_id: int, new_days: int):
+async def update_habit_days(habit_id: int, user_id: int, new_days: int):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
-            "UPDATE habits SET target_days = ? WHERE id = ?",
-            (new_days, habit_id)
+            "UPDATE habits SET target_days = ? WHERE id = ? AND user_id = ?",
+            (new_days, habit_id, user_id)
         )
         await db.commit()
 
 
-async def update_habit_time(habit_id: int, new_time: str):
+async def update_habit_time(habit_id: int, user_id: int, new_time: str):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
-            "UPDATE habits SET reminder_time = ? WHERE id = ?",
-            (new_time, habit_id)
+            "UPDATE habits SET reminder_time = ? WHERE id = ? AND user_id = ?",
+            (new_time, habit_id, user_id)
         )
         await db.commit()
 
@@ -230,7 +225,7 @@ async def delete_habit(habit_id: int, user_id: int) -> bool:
         )
         await db.commit()
         return cursor.rowcount > 0
-      
+
 async def get_days_since_creation(habit_id: int) -> int:
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute("SELECT created_at FROM habits WHERE id = ?", (habit_id,))
@@ -240,6 +235,7 @@ async def get_days_since_creation(habit_id: int) -> int:
         created = datetime.datetime.fromisoformat(row[0]).date()
         today = datetime.date.today()
         return (today - created).days
+
 async def add_created_at_column():
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute("PRAGMA table_info(habits)")
@@ -250,8 +246,8 @@ async def add_created_at_column():
             await db.execute("UPDATE habits SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL")
             await db.commit()
             print("✅ Колонка created_at добавлена и заполнена")
-async def get_best_streak(habit_id: int) -> int:
 
+async def get_best_streak(habit_id: int) -> int:
     async with aiosqlite.connect(DB_PATH) as db:
         cur = await db.execute(
             "SELECT date FROM logs WHERE habit_id=? AND done=1 ORDER BY date ASC",
@@ -275,3 +271,4 @@ async def get_best_streak(habit_id: int) -> int:
     if current > best:
         best = current
     return best
+
