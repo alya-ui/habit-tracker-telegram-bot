@@ -86,8 +86,8 @@ copy .env.save .env
 # (Откройте .env и вставьте токен: BOT_TOKEN=ваш_токен_бота)
 python -m bot.main
 
-### Linux/macOS
-
+### Linux/ macOS
+```bash
 git clone https://github.com/alya-ui/habit-tracker-telegram-bot.git
 cd habit-tracker-telegram-bot
 python3 -m venv .venv
