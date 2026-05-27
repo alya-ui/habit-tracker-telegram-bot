@@ -53,6 +53,7 @@
 
 
 **## Структура репозитория**
+
 ```
 .idea/
 ├── inspectionProfiles/
